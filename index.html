@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Text-to-Speech | Google GenAI</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#4F46E5',
+                        secondary: '#10B981',
+                        darkBg: '#111827',
+                        darkCard: '#1F2937'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Custom Slider Styling */
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: #4F46E5;
+            cursor: pointer;
+            margin-top: -6px;
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: #E5E7EB;
+            border-radius: 2px;
+        }
+        .dark input[type=range]::-webkit-slider-runnable-track {
+            background: #374151;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-900 dark:bg-darkBg dark:text-gray-100 transition-colors duration-200 min-h-screen flex flex-col">
+
+    <!-- Header -->
+    <header class="bg-white dark:bg-darkCard shadow-sm sticky top-0 z-50">
+        <div class="max-w-4xl mx-auto px-4 py-4 flex justify-between items-center">
+            <div class="flex items-center space-x-2">
+                <svg class="w-8 h-8 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path>
+                </svg>
+                <h1 class="text-xl font-bold tracking-tight">AI Voice Studio</h1>
+            </div>
+            <button id="themeToggle" class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors" aria-label="Toggle Dark Mode">
+                <!-- Sun Icon -->
+                <svg id="sunIcon" class="w-6 h-6 hidden dark:block text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                <!-- Moon Icon -->
+                <svg id="moonIcon" class="w-6 h-6 block dark:hidden text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 24.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-grow container mx-auto px-4 py-8 max-w-4xl space-y-6">
+
+        <!-- Info/Mode Banner -->
+        <div id="modeBanner" class="bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-500 p-4 rounded-r shadow-sm">
+            <div class="flex justify-between items-start">
+                <div>
+                    <p class="text-sm text-blue-700 dark:text-blue-300 font-medium">Configure Production vs Demo Mode</p>
+                    <p class="text-xs text-blue-600 dark:text-blue-400 mt-1">If using <strong>Demo Mode</strong>, enter your API Key below. For <strong>Production</strong>, run the `server.js` proxy and the key is safe on the backend.</p>
+                </div>
+                <button id="toggleSettingsBtn" class="text-xs text-blue-600 underline hover:text-blue-800 dark:text-blue-400">Settings</button>
+            </div>
+            
+            <div id="apiKeySection" class="mt-3 hidden">
+                <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Google GenAI API Key (Demo Mode Only)</label>
+                <div class="flex gap-2">
+                    <input type="password" id="apiKeyInput" placeholder="AIzaSy..." class="flex-1 px-3 py-2 text-sm border bg-white dark:bg-gray-800 dark:border-gray-600 rounded focus:ring-2 focus:ring-primary focus:outline-none">
+                    <button id="saveKeyBtn" class="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-xs font-bold rounded hover:bg-gray-300 dark:hover:bg-gray-600">Save</button>
+                </div>
+                <div class="mt-2 flex items-center space-x-2">
+                    <input type="checkbox" id="useBackendProxy" class="rounded text-primary focus:ring-primary h-4 w-4">
+                    <label for="useBackendProxy" class="text-sm text-gray-600 dark:text-gray-400">Use Backend Proxy (http://localhost:3000/api/tts)</label>
+                </div>
+            </div>
+        </div>
+
+        <!-- Layout Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            
+            <!-- Left: Settings -->
+            <div class="md:col-span-1 space-y-6">
+                <!-- Voice Settings Card -->
+                <div class="bg-white dark:bg-darkCard rounded-xl shadow p-5 border border-gray-100 dark:border-gray-700">
+                    <h2 class="text-lg font-semibold mb-4 flex items-center gap-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path></svg>
+                        Voice Settings
+                    </h2>
+
+                    <div class="space-y-4">
+                        <!-- Language -->
+                        <div>
+                            <label class="block text-xs font-medium text-gray-500 uppercase mb-1">Language</label>
+                            <select id="languageSelect" class="w-full bg-gray-50 dark:bg-gray-800 border-none rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary">
+                                <option value="en-US">English (US)</option>
+                                <option value="en-GB">English (UK)</option>
+                                <option value="es-ES">Spanish (Spain)</option>
+                                <option value="fr-FR">French (France)</option>
+                                <option value="de-DE">German (Germany)</option>
+                                <option value="hi-IN">Hindi (India)</option>
+                                <option value="ja-JP">Japanese (Japan)</option>
+                            </select>
+                        </div>
+
+                        <!-- Voice Selection -->
+                        <div>
+                            <label class="block text-xs font-medium text-gray-500 uppercase mb-1">Voice</label>
+                            <select id="voiceSelect" class="w-full bg-gray-50 dark:bg-gray-800 border-none rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary">
+                                <!-- Populated by JS -->
+                            </select>
+                        </div>
+
+                        <!-- Speed -->
+                        <div>
+                            <div class="flex justify-between mb-1">
+                                <label class="text-xs font-medium text-gray-500 uppercase">Speed</label>
+                                <span id="speedValue" class="text-xs font-mono">1.0x</span>
+                            </div>
+                            <input type="range" id="speedRange" min="0.25" max="4.0" step="0.25" value="1.0" class="w-full">
+                        </div>
+
+                        <!-- Pitch -->
+                        <div>
+                            <div class="flex justify-between mb-1">
+                                <label class="text-xs font-medium text-gray-500 uppercase">Pitch</label>
+                                <span id="pitchValue" class="text-xs font-mono">0.0</span>
+                            </div>
+                            <input type="range" id="pitchRange" min="-20.0" max="20.0" step="1.0" value="0.0" class="w-full">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right: Input & Output -->
+            <div class="md:col-span-2 space-y-6">
+                
+                <!-- Text Input Card -->
+                <div class="bg-white dark:bg-darkCard rounded-xl shadow p-5 border border-gray-100 dark:border-gray-700 relative">
+                    <div class="flex justify-between items-center mb-3">
+                        <label class="text-sm font-semibold text-gray-700 dark:text-gray-200">Text to Speech</label>
+                        <div class="space-x-2">
+                            <button id="pasteSampleBtn" class="text-xs text-primary hover:text-indigo-700 font-medium">Paste Sample</button>
+                            <button id="clearBtn" class="text-xs text-red-500 hover:text-red-700 font-medium">Clear</button>
+                        </div>
+                    </div>
+                    
+                    <textarea id="textInput" rows="6" maxlength="5000" 
+                        class="w-full bg-gray-50 dark:bg-gray-900 border-none rounded-lg p-4 text-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-primary resize-y placeholder-gray-400 dark:placeholder-gray-600"
+                        placeholder="Enter text here to convert to speech..."></textarea>
+                    
+                    <div class="flex justify-between items-center mt-2 text-xs text-gray-400">
+                        <span id="charCount">0 / 5000</span>
+                        <span id="charWarning" class="text-orange-500 hidden">Approaching limit!</span>
+                    </div>
+
+                    <div class="mt-4 flex justify-end">
+                        <button id="generateBtn" disabled class="bg-primary hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed text-white px-6 py-2 rounded-lg font-medium shadow-lg shadow-indigo-500/30 transition-all flex items-center gap-2">
+                            <span class="btn-text">Generate Audio</span>
+                            <!-- Spinner Icon -->
+                            <svg id="loadingSpinner" class="animate-spin h-4 w-4 text-white hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Output Card -->
+                <div id="outputCard" class="bg-white dark:bg-darkCard rounded-xl shadow p-5 border border-gray-100 dark:border-gray-700 hidden">
+                    <h2 class="text-lg font-semibold mb-4 flex items-center gap-2 text-green-600">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        Generation Complete
+                    </h2>
+                    
+                    <!-- Metadata Pill -->
+                    <div class="flex flex-wrap gap-2 text-xs text-gray-500 mb-4">
+                        <span class="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">Voice: <span id="metaVoice">--</span></span>
+                        <span class="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">Time: <span id="metaTime">--</span></span>
+                    </div>
+
+                    <!-- Audio Player -->
+                    <audio id="audioPlayer" controls class="w-full mb-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"></audio>
+
+                    <!-- Actions -->
+                    <div class="flex gap-3">
+                        <a id="downloadLink" href="#" download="speech.mp3" class="flex-1 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-center py-2 rounded-lg text-sm font-medium transition-colors">
+                            Download MP3
+                        </a>
+                        <button id="regenerateBtn" class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="mt-8 border-t dark:border-gray-700 py-6 text-center text-sm text-gray-500">
+        <p>&copy; 2025 AI Voice Studio. Powered by Google GenAI.</p>
+    </footer>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-4 right-4 transform translate-y-20 opacity-0 transition-all duration-300 z-50">
+        <div id="toastContent" class="bg-gray-800 text-white px-6 py-3 rounded-lg shadow-lg flex items-center gap-3">
+            <span id="toastIcon"></span>
+            <span id="toastMessage">Notification</span>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
